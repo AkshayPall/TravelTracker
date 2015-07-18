@@ -1,7 +1,10 @@
 package com.example.akshaypall.traveltracker;
 
 import android.app.FragmentManager;
+import android.app.LoaderManager;
 import android.content.DialogInterface;
+import android.content.Loader;
+import android.database.Cursor;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -32,7 +35,7 @@ import java.util.List;
 
 public class MainActivity extends ActionBarActivity implements MemoryAlertFragment.Listener, OnMapReadyCallback,
         GoogleMap.OnMapClickListener, GoogleMap.OnMarkerDragListener, GoogleMap.OnInfoWindowClickListener,
-        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
+        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LoaderManager.LoaderCallbacks<Cursor>{
 
     private static final String TAG = "MainActivity";
     private GoogleMap mMap;
@@ -45,31 +48,33 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        SupportMapFragment mapFragment = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
         mDataSource = new MemoriesDataSource(this);
+        getLoaderManager().initLoader(0, null, this);
+
+        SupportMapFragment mapFragment = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
+        mMap = mapFragment.getMap();
+        onMapReady(mMap);
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
         mMap.setMyLocationEnabled(true);
         mMap.setOnMapClickListener(this);
         mMap.setInfoWindowAdapter(new MarkerAdapter(getLayoutInflater(), mMemories));
         mMap.setOnMarkerDragListener(this);
         mMap.setOnInfoWindowClickListener(this);
-        new AsyncTask<Void, Void, List<Memory>>() {
-            @Override
-            protected List<Memory> doInBackground(Void... params) {
-                return mDataSource.getAllMemories();
-            }
-
-            @Override
-            protected void onPostExecute(List<Memory> memories) {
-                //super.onPostExecute(memories);
-                onFetchedMemories(memories);
-            }
-        }.execute();
+//        new AsyncTask<Void, Void, List<Memory>>() {
+//            @Override
+//            protected List<Memory> doInBackground(Void... params) {
+//                return mDataSource.getAllMemories();
+//            }
+//
+//            @Override
+//            protected void onPostExecute(List<Memory> memories) {
+//                //super.onPostExecute(memories);
+//                onFetchedMemories(memories);
+//            }
+//        }.execute();
     }
 
     private void onFetchedMemories(List<Memory> memories) {
@@ -209,6 +214,21 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
 
     @Override
     public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return new MemoriesLoader(this, mDataSource);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        onFetchedMemories(mDataSource.cursorToMemoriesList(data));
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
 
     }
 

@@ -24,7 +24,7 @@ public class DbHelper extends SQLiteOpenHelper {
 
     private static DbHelper singleton = null;
 
-    public static DbHelper getInstance(Context context) {
+    public synchronized static DbHelper getInstance(Context context) {
         if (singleton == null) singleton = new DbHelper(context.getApplicationContext());
         return singleton;
     }

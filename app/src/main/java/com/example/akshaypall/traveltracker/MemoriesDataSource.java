@@ -38,15 +38,22 @@ public class MemoriesDataSource {
     }
 
     public List<Memory> getAllMemories() {
-        List<Memory> memories = new ArrayList<>();
+        Cursor cursor = allMemoriesCursor();
+        return cursorToMemoriesList(cursor);
 
-        Cursor cursor = mDbHelper.getReadableDatabase().query(DbHelper.MEMORIES_TABLE_NAME, allColumns, null, null, null, null, null);
+    }
+
+    public Cursor allMemoriesCursor() {
+        return mDbHelper.getReadableDatabase().query(DbHelper.MEMORIES_TABLE_NAME, allColumns, null, null, null, null, null);
+    }
+
+    public List<Memory> cursorToMemoriesList (Cursor cursor) {
+        List<Memory> memories = new ArrayList<>();
         cursor.moveToFirst();
         while(!cursor.isAfterLast()){
             memories.add(cursorToMemory(cursor));
             cursor.moveToNext();
         }
-        cursor.close();
 
         return memories;
     }
