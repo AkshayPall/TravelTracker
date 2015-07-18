@@ -30,7 +30,7 @@ import java.util.List;
 
 
 public class MainActivity extends ActionBarActivity implements MemoryAlertFragment.Listener, OnMapReadyCallback,
-        GoogleMap.OnMapClickListener,
+        GoogleMap.OnMapClickListener, GoogleMap.OnMarkerDragListener,
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
 
     private static final String TAG = "MainActivity";
@@ -55,6 +55,7 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
         mMap.setMyLocationEnabled(true);
         mMap.setOnMapClickListener(this);
         mMap.setInfoWindowAdapter(new MarkerAdapter(getLayoutInflater(), mMemories));
+        mMap.setOnMarkerDragListener(this);
         List<Memory> memories = mDataSource.getAllMemories();
         for (Memory memory: memories) {
             addMarker(memory);
@@ -63,6 +64,15 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
 
     @Override
     public void onMapClick(LatLng latLng) {
+        Memory memory = new Memory();
+
+        updateMemoryPosition(memory, latLng);
+
+
+        MemoryAlertFragment.newInstance(memory).show(getFragmentManager(), MemoryAlertFragment.MEMORY_KEY);
+    }
+
+    private void updateMemoryPosition(Memory memory, LatLng latLng) {
         Geocoder geocoder = new Geocoder(this);
         List<Address> matches = null;
 
@@ -75,14 +85,10 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
         Address bestMatch = (matches.isEmpty() ? null: matches.get(0));
         int maxLines = bestMatch.getMaxAddressLineIndex();
 
-        Memory memory = new Memory();
         memory.country = bestMatch.getAddressLine(maxLines);
         memory.city = bestMatch.getAddressLine(maxLines-1);
         memory.lattitude = latLng.latitude;
         memory.longitude = latLng.longitude;
-
-
-        MemoryAlertFragment.newInstance(memory).show(getFragmentManager(), MemoryAlertFragment.MEMORY_KEY);
     }
 
     private void addGoogleAPIClient(){
@@ -102,6 +108,7 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
 
     private void addMarker(Memory memory) {
         Marker marker = mMap.addMarker(new MarkerOptions()
+                .draggable(true)
                 .position(new LatLng(memory.lattitude, memory.longitude)));
 
         mMemories.put(marker.getId(), memory);
@@ -110,6 +117,23 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
     @Override
     public void onCancelClicked(Memory memory) {
 
+    }
+
+    @Override
+    public void onMarkerDragStart(Marker marker) {
+
+    }
+
+    @Override
+    public void onMarkerDrag(Marker marker) {
+
+    }
+
+    @Override
+    public void onMarkerDragEnd(Marker marker) {
+        Memory memory = mMemories.get(marker.getId());
+        updateMemoryPosition(memory, marker.getPosition());
+        mDataSource.updateMemory(memory);
     }
 
     @Override

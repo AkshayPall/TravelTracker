@@ -34,7 +34,7 @@ public class MemoriesDataSource {
         values.put(DbHelper.COLUMN_NOTES, memory.note);
 
         //to write all the data onto the database using the mapping scheme form the ContentValues
-        mDbHelper.getWritableDatabase().insert(DbHelper.MEMORIES_TABLE_NAME, null, values);
+        memory.id = mDbHelper.getWritableDatabase().insert(DbHelper.MEMORIES_TABLE_NAME, null, values);
     }
 
     public List<Memory> getAllMemories() {
@@ -53,6 +53,7 @@ public class MemoriesDataSource {
 
     private Memory cursorToMemory (Cursor cursor) {
         Memory memory = new Memory();
+        memory.id = cursor.getLong(0);
         memory.lattitude = cursor.getDouble(1);
         memory.longitude = cursor.getDouble(2);
         memory.city = cursor.getString(3);
@@ -60,5 +61,17 @@ public class MemoriesDataSource {
         memory.note = cursor.getString(5);
 
         return memory;
+    }
+
+    public void updateMemory (Memory memory) {
+        ContentValues values = new ContentValues();
+        values.put(DbHelper.COLUMN_LATITUDE, memory.lattitude);
+        values.put(DbHelper.COLUMN_LONGITUDE, memory.longitude);
+        values.put(DbHelper.COLUMN_CITY, memory.city);
+        values.put(DbHelper.COLUMN_COUNTRY, memory.country);
+        values.put(DbHelper.COLUMN_NOTES, memory.note);
+
+        String[] whereArgs = {String.valueOf(memory.id)};
+        mDbHelper.getWritableDatabase().update(DbHelper.MEMORIES_TABLE_NAME, values, DbHelper.COLUMN_ID+"=?", whereArgs);
     }
 }
