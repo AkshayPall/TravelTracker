@@ -74,4 +74,16 @@ public class MemoriesDataSource {
         String[] whereArgs = {String.valueOf(memory.id)};
         mDbHelper.getWritableDatabase().update(DbHelper.MEMORIES_TABLE_NAME, values, DbHelper.COLUMN_ID+"=?", whereArgs);
     }
+
+    public void deleteMemory (Memory memory) {
+        ContentValues values = new ContentValues();
+        values.put(DbHelper.COLUMN_LATITUDE, memory.lattitude);
+        values.put(DbHelper.COLUMN_LONGITUDE, memory.longitude);
+        values.put(DbHelper.COLUMN_CITY, memory.city);
+        values.put(DbHelper.COLUMN_COUNTRY, memory.country);
+        values.put(DbHelper.COLUMN_NOTES, memory.note);
+
+        String[] whereArgs = {String.valueOf(memory.id)};
+        mDbHelper.getWritableDatabase().delete(mDbHelper.MEMORIES_TABLE_NAME, mDbHelper.COLUMN_ID+"=?", whereArgs);
+    }
 }

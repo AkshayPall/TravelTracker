@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
@@ -30,7 +31,7 @@ import java.util.List;
 
 
 public class MainActivity extends ActionBarActivity implements MemoryAlertFragment.Listener, OnMapReadyCallback,
-        GoogleMap.OnMapClickListener, GoogleMap.OnMarkerDragListener,
+        GoogleMap.OnMapClickListener, GoogleMap.OnMarkerDragListener, GoogleMap.OnInfoWindowClickListener,
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
 
     private static final String TAG = "MainActivity";
@@ -56,7 +57,22 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
         mMap.setOnMapClickListener(this);
         mMap.setInfoWindowAdapter(new MarkerAdapter(getLayoutInflater(), mMemories));
         mMap.setOnMarkerDragListener(this);
-        List<Memory> memories = mDataSource.getAllMemories();
+        mMap.setOnInfoWindowClickListener(this);
+        new AsyncTask<Void, Void, List<Memory>>() {
+            @Override
+            protected List<Memory> doInBackground(Void... params) {
+                return mDataSource.getAllMemories();
+            }
+
+            @Override
+            protected void onPostExecute(List<Memory> memories) {
+                //super.onPostExecute(memories);
+                onFetchedMemories(memories);
+            }
+        }.execute();
+    }
+
+    private void onFetchedMemories(List<Memory> memories) {
         for (Memory memory: memories) {
             addMarker(memory);
         }
@@ -83,12 +99,14 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
         }
 
         Address bestMatch = (matches.isEmpty() ? null: matches.get(0));
-        int maxLines = bestMatch.getMaxAddressLineIndex();
+        if (bestMatch != null) {
+            int maxLines = bestMatch.getMaxAddressLineIndex();
 
-        memory.country = bestMatch.getAddressLine(maxLines);
-        memory.city = bestMatch.getAddressLine(maxLines-1);
-        memory.lattitude = latLng.latitude;
-        memory.longitude = latLng.longitude;
+            memory.country = bestMatch.getAddressLine(maxLines);
+            memory.city = bestMatch.getAddressLine(maxLines-1);
+            memory.lattitude = latLng.latitude;
+            memory.longitude = latLng.longitude;
+        }
     }
 
     private void addGoogleAPIClient(){
@@ -97,6 +115,41 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
+    }
+
+    @Override
+    public void onInfoWindowClick(final Marker marker) {
+        final Memory memory = mMemories.get(marker.getId());
+        String[] actions = {"Edit", "Delete"};
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(memory.city+", "+memory.country)
+                .setItems(actions, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //delete action has index 1
+                        if (which == 1) {
+                            mDataSource.deleteMemory(memory);
+                            marker.remove();
+                        }
+                    }
+                });
+
+                /*.setPositiveButton(getString(R.string.remove_dialog_positive_button), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //If Remove Pressed
+                        mDataSource.deleteMemory(memory);
+                        marker.remove();
+                    }
+                })
+                .setNegativeButton(getString(R.string.dialog_negative_button), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //if Cancel Pressed
+                    }
+                });*/
+        builder.create().show();
     }
 
     @Override
