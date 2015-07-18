@@ -24,6 +24,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -36,6 +37,7 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
     private HashMap<String, Memory> mMemories = new HashMap<>();
+    private MemoriesDataSource mDataSource;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +46,7 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
 
         SupportMapFragment mapFragment = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        mDataSource = new MemoriesDataSource(this);
     }
 
     @Override
@@ -52,6 +55,10 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
         mMap.setMyLocationEnabled(true);
         mMap.setOnMapClickListener(this);
         mMap.setInfoWindowAdapter(new MarkerAdapter(getLayoutInflater(), mMemories));
+        List<Memory> memories = mDataSource.getAllMemories();
+        for (Memory memory: memories) {
+            addMarker(memory);
+        }
     }
 
     @Override
@@ -76,8 +83,6 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
 
 
         MemoryAlertFragment.newInstance(memory).show(getFragmentManager(), MemoryAlertFragment.MEMORY_KEY);
-
-
     }
 
     private void addGoogleAPIClient(){
@@ -90,6 +95,12 @@ public class MainActivity extends ActionBarActivity implements MemoryAlertFragme
 
     @Override
     public void onSaveClicked(Memory memory) {
+        addMarker(memory);
+
+        mDataSource.createMemory(memory);
+    }
+
+    private void addMarker(Memory memory) {
         Marker marker = mMap.addMarker(new MarkerOptions()
                 .position(new LatLng(memory.lattitude, memory.longitude)));
 
